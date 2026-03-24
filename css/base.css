@@ -1,0 +1,111 @@
+/* ═══════════════════════════════════════════
+   BASE — Reset, screen system, shared components
+   ═══════════════════════════════════════════ */
+
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body { min-height: 100vh; }
+input[type=number]::-webkit-outer-spin-button,
+input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+input[type=number] { -moz-appearance: textfield; }
+
+/* ─── SCREEN SYSTEM ─── */
+.screen { display: none; min-height: 100vh; }
+.screen.active { display: flex; flex-direction: column; }
+
+/* ─── DEMO BANNER ─── */
+.demo-banner {
+  display: none;
+  align-items: center; justify-content: center; gap: 8px;
+  padding: 9px 16px;
+  font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 0.06em;
+  position: sticky; top: 0; z-index: 200;
+}
+.demo-banner-cody {
+  background: rgba(240,160,75,0.15); border-bottom: 1px solid rgba(240,160,75,0.25);
+  color: #f0a04b;
+}
+.demo-banner-kylie {
+  background: rgba(212,83,126,0.1); border-bottom: 0.5px solid rgba(212,83,126,0.2);
+  color: #D4537E;
+}
+.demo-dot {
+  width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0;
+  animation: pulse-demo 2s ease-in-out infinite;
+}
+.demo-banner-cody .demo-dot { background: #f0a04b; }
+.demo-banner-kylie .demo-dot { background: #D4537E; }
+@keyframes pulse-demo {
+  0%,100% { opacity: 1; } 50% { opacity: 0.3; }
+}
+
+/* ─── CONFIG BANNER ─── */
+.config-banner {
+  background: #ff4444; color: #fff;
+  font-family: 'DM Mono', monospace; font-size: 12px;
+  padding: 10px 16px; text-align: center; line-height: 1.5;
+  display: none;
+}
+.config-banner.show { display: block; }
+
+/* ─── SAVE BAR ─── */
+.save-bar {
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 200;
+  padding: 10px 18px calc(10px + env(safe-area-inset-bottom));
+  background: rgba(13,15,14,0.95); backdrop-filter: blur(12px);
+  border-top: 1px solid rgba(255,255,255,0.07);
+  display: flex; align-items: center; gap: 10px;
+}
+.save-bar-cody { background: rgba(13,15,14,0.95); border-color: rgba(255,255,255,0.07); }
+.save-bar-kylie { background: rgba(255,255,255,0.97); border-color: rgba(0,0,0,0.09); }
+
+.last-saved {
+  font-size: 10px; font-family: 'DM Mono', monospace;
+  flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.save-bar-cody .last-saved { color: #89a88c; }
+.save-bar-kylie .last-saved { color: #6B6962; }
+
+.save-btn-manual {
+  padding: 10px 20px; border-radius: 10px;
+  font-family: 'Syne', sans-serif; font-weight: 700; font-size: 13px;
+  cursor: pointer; transition: all 0.15s; border: none; flex-shrink: 0;
+}
+.save-btn-manual:active { transform: scale(0.96); }
+.save-bar-cody .save-btn-manual {
+  background: rgba(92,219,143,0.15); border: 1px solid rgba(92,219,143,0.3);
+  color: #5cdb8f;
+}
+.save-bar-kylie .save-btn-manual {
+  background: #534AB7; color: #fff;
+}
+
+.nav-arrows { display: flex; gap: 6px; }
+.nav-arrow {
+  padding: 10px 14px; border-radius: 10px;
+  background: none; border: 1px solid;
+  cursor: pointer; font-size: 13px; transition: all 0.15s;
+}
+.nav-arrow:active { transform: scale(0.93); }
+.save-bar-cody .nav-arrow { border-color: rgba(255,255,255,0.08); color: #9cb09f; }
+.save-bar-kylie .nav-arrow { border-color: rgba(0,0,0,0.1); color: #6B6962; }
+
+/* ─── TOAST ─── */
+.toast {
+  position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%) translateY(20px);
+  font-family: 'Syne', sans-serif; font-weight: 700; font-size: 13px;
+  padding: 10px 20px; border-radius: 99px;
+  opacity: 0; transition: all 0.25s; pointer-events: none; z-index: 999;
+  white-space: nowrap;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+.toast-cody { background: #5cdb8f; color: #0d1a11; }
+.toast-kylie { background: #534AB7; color: #fff; }
+
+/* ─── ANIMATIONS ─── */
+@keyframes shake {
+  0%,100%{transform:translateX(0)}
+  20%{transform:translateX(-8px)}
+  40%{transform:translateX(8px)}
+  60%{transform:translateX(-6px)}
+  80%{transform:translateX(6px)}
+}
