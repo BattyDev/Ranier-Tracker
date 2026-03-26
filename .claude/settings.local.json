@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install:*)",
+      "Bash(taskkill //F //IM node.exe)",
+      "Bash(rm -rf node_modules package-lock.json)",
+      "Bash(node -e \"const p = require\\(''./package.json''\\); console.log\\(''deps:'', Object.keys\\(p.dependencies || {}\\)\\); console.log\\(''devDeps:'', Object.keys\\(p.devDependencies || {}\\)\\)\")",
+      "Bash(mv index.html index.old.html)",
+      "Bash(mv index.vite.html index.html)",
+      "Bash(npx vite:*)",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(curl -s -X POST \"https://pqshfynscuwapahpzjug.supabase.co/rest/v1/rpc\" -H \"apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBxc2hmeW5zY3V3YXBhaHB6anVnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzMjI5NjUsImV4cCI6MjA4OTg5ODk2NX0.7vGReE6aTFTehZQTKDTaoSSEdBbqIHI-SYb86UNvhsk\" -H \"Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBxc2hmeW5zY3V3YXBhaHB6anVnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzMjI5NjUsImV4cCI6MjA4OTg5ODk2NX0.7vGReE6aTFTehZQTKDTaoSSEdBbqIHI-SYb86UNvhsk\" -H \"Content-Type: application/json\")"
+    ]
+  }
+}

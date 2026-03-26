@@ -1,0 +1,18 @@
+{
+  "name": "rainier-tracker-mcp",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "npx wrangler dev",
+    "deploy": "npx wrangler deploy"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.100.0",
+    "agents": "^0.0.98",
+    "@anthropic-ai/sdk": "^0.39.0"
+  },
+  "devDependencies": {
+    "wrangler": "^4.0.0",
+    "@cloudflare/workers-types": "^4.0.0"
+  }
+}

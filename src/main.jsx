@@ -1,0 +1,7 @@
+import { render } from 'preact';
+import { App } from './app.jsx';
+import './css/variables.css';
+import './css/base.css';
+import './css/components.css';
+
+render(<App />, document.getElementById('app'));
