@@ -1,0 +1,9 @@
+name = "battydev"
+main = "src/index.ts"
+compatibility_date = "2025-03-01"
+
+[vars]
+SUPABASE_URL = "https://pqshfynscuwapahpzjug.supabase.co"
+
+# Set these as secrets via: npx wrangler secret put SUPABASE_SERVICE_KEY
+# npx wrangler secret put SHARED_SECRET

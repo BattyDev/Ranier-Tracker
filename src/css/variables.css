@@ -1,0 +1,94 @@
+/* ═══════════════════════════════════════════
+   Theme Variables — Dark / Light + User Accents
+   ═══════════════════════════════════════════ */
+
+/* Dark mode (default — matches current Cody theme) */
+:root,
+[data-theme="dark"] {
+  --bg-primary: #0d0f0e;
+  --bg-card: #161a18;
+  --bg-input: #1e2421;
+  --bg-topbar: rgba(13,15,14,0.92);
+  --text-primary: #e8ede9;
+  --text-secondary: #9cb09f;
+  --text-note: rgba(240,160,75,0.8);
+  --border: rgba(255,255,255,0.07);
+  --border-input: rgba(255,255,255,0.12);
+  --accent: #5cdb8f;
+  --accent-bg: rgba(92,219,143,0.12);
+  --accent-border: rgba(92,219,143,0.25);
+  --accent-text: #5cdb8f;
+  --tag-strength-bg: rgba(91,164,207,0.15);
+  --tag-strength-text: #5ba4cf;
+  --tag-strength-border: rgba(91,164,207,0.2);
+  --tag-cardio-bg: rgba(92,219,143,0.12);
+  --tag-cardio-text: #5cdb8f;
+  --tag-cardio-border: rgba(92,219,143,0.2);
+  --tag-rest-bg: #1e2421;
+  --tag-rest-text: #9cb09f;
+  --tag-rest-border: rgba(255,255,255,0.07);
+  --tag-rainier-bg: rgba(240,160,75,0.12);
+  --tag-rainier-text: #f0a04b;
+  --tag-rainier-border: rgba(240,160,75,0.2);
+  --pain-green-bg: rgba(92,219,143,0.15);
+  --pain-green-text: #5cdb8f;
+  --pain-green-border: #5cdb8f;
+  --pain-yellow-bg: rgba(240,160,75,0.15);
+  --pain-yellow-text: #f0a04b;
+  --pain-yellow-border: #f0a04b;
+  --pain-red-bg: rgba(224,92,92,0.15);
+  --pain-red-text: #e05c5c;
+  --pain-red-border: #e05c5c;
+}
+
+/* Light mode */
+[data-theme="light"] {
+  --bg-primary: #f5f5f0;
+  --bg-card: #ffffff;
+  --bg-input: #f0f0ec;
+  --bg-topbar: rgba(245,245,240,0.92);
+  --text-primary: #1a1a1a;
+  --text-secondary: #6b6b62;
+  --text-note: #b87a2a;
+  --border: rgba(0,0,0,0.08);
+  --border-input: rgba(0,0,0,0.15);
+  --accent: #2a9d5c;
+  --accent-bg: rgba(42,157,92,0.1);
+  --accent-border: rgba(42,157,92,0.3);
+  --accent-text: #2a9d5c;
+  --tag-strength-bg: rgba(50,120,170,0.1);
+  --tag-strength-text: #2a7aad;
+  --tag-strength-border: rgba(50,120,170,0.2);
+  --tag-cardio-bg: rgba(42,157,92,0.1);
+  --tag-cardio-text: #2a9d5c;
+  --tag-cardio-border: rgba(42,157,92,0.2);
+  --tag-rest-bg: #eaeae5;
+  --tag-rest-text: #6b6b62;
+  --tag-rest-border: rgba(0,0,0,0.08);
+  --tag-rainier-bg: rgba(180,120,40,0.1);
+  --tag-rainier-text: #b87a2a;
+  --tag-rainier-border: rgba(180,120,40,0.2);
+  --pain-green-bg: rgba(42,157,92,0.1);
+  --pain-green-text: #2a9d5c;
+  --pain-green-border: #2a9d5c;
+  --pain-yellow-bg: rgba(180,120,40,0.1);
+  --pain-yellow-text: #b87a2a;
+  --pain-yellow-border: #b87a2a;
+  --pain-red-bg: rgba(200,60,60,0.1);
+  --pain-red-text: #c83c3c;
+  --pain-red-border: #c83c3c;
+}
+
+/* Per-user accent override */
+[data-user="kylie"] {
+  --accent: #8B7FD4;
+  --accent-bg: rgba(139,127,212,0.12);
+  --accent-border: rgba(139,127,212,0.3);
+  --accent-text: #8B7FD4;
+}
+[data-theme="light"][data-user="kylie"] {
+  --accent: #6B5FC7;
+  --accent-bg: rgba(107,95,199,0.1);
+  --accent-border: rgba(107,95,199,0.3);
+  --accent-text: #6B5FC7;
+}

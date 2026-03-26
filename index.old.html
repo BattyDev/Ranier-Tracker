@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/landing.css">
+<link rel="stylesheet" href="css/weeks.css">
+<link rel="stylesheet" href="css/cody.css">
+<link rel="stylesheet" href="css/kylie.css">
+</head>
+<body>
+
+<!-- CONFIG BANNER (shown when Supabase not set up) -->
+<div class="config-banner" id="configBanner">
+  ⚙️ Supabase not configured — progress won't be saved to the cloud. See setup instructions below.
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- ════════════════════ LANDING ════════════════════ -->
+<div class="screen active" id="screen-landing">
+  <div class="landing-inner">
+    <div class="landing-badge">⛰ Mt. Rainier · Aug 2026</div>
+    <h1 class="landing-title">Training<br>Tracker</h1>
+    <p class="landing-sub">Choose your profile<br>to log your progress</p>
+    <div class="user-cards">
+      <button class="user-card user-card-cody" onclick="selectUser('cody')">
+        <div class="user-avatar avatar-cody">⛰</div>
+        <div class="user-card-info">
+          <h3>Cody</h3>
+          <p>Lower body · Upper body · Cardio</p>
+        </div>
+        <span class="user-card-arrow">→</span>
+      </button>
+      <button class="user-card user-card-kylie" onclick="selectUser('kylie')">
+        <div class="user-avatar avatar-kylie">🌟</div>
+        <div class="user-card-info">
+          <h3>Kylie</h3>
+          <p>Strength · Cardio · Yoga</p>
+        </div>
+        <span class="user-card-arrow">→</span>
+      </button>
+    </div>
+    <p class="landing-footer">Protected with 6-digit PIN</p>
+  </div>
+</div>
+
+<!-- ════════════════════ PIN ════════════════════ -->
+<div class="screen" id="screen-pin">
+  <div class="pin-inner">
+    <button class="pin-back" id="pinBack" onclick="goBack()">← Back</button>
+    <div class="pin-user-label" id="pinUserLabel">CODY</div>
+    <h2 class="pin-title" id="pinTitle">Enter your PIN</h2>
+    <p class="pin-hint" id="pinHint">6-digit code</p>
+    <div class="pin-dots" id="pinDots">
+      <div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div>
+      <div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div>
+    </div>
+    <div class="pin-error" id="pinError">Incorrect PIN. Try again.</div>
+    <div class="pin-keypad">
+      <button class="pin-key" onclick="pinPress('1')"><span class="pin-key-num">1</span><span class="pin-key-sub">&nbsp;</span></button>
+      <button class="pin-key" onclick="pinPress('2')"><span class="pin-key-num">2</span><span class="pin-key-sub">ABC</span></button>
+      <button class="pin-key" onclick="pinPress('3')"><span class="pin-key-num">3</span><span class="pin-key-sub">DEF</span></button>
+      <button class="pin-key" onclick="pinPress('4')"><span class="pin-key-num">4</span><span class="pin-key-sub">GHI</span></button>
+      <button class="pin-key" onclick="pinPress('5')"><span class="pin-key-num">5</span><span class="pin-key-sub">JKL</span></button>
+      <button class="pin-key" onclick="pinPress('6')"><span class="pin-key-num">6</span><span class="pin-key-sub">MNO</span></button>
+      <button class="pin-key" onclick="pinPress('7')"><span class="pin-key-num">7</span><span class="pin-key-sub">PQRS</span></button>
+      <button class="pin-key" onclick="pinPress('8')"><span class="pin-key-num">8</span><span class="pin-key-sub">TUV</span></button>
+      <button class="pin-key" onclick="pinPress('9')"><span class="pin-key-num">9</span><span class="pin-key-sub">WXYZ</span></button>
+      <button class="pin-key del" onclick="pinClear()">⌫ Clear</button>
+      <button class="pin-key" onclick="pinPress('0')"><span class="pin-key-num">0</span><span class="pin-key-sub">+</span></button>
+      <button class="pin-key del" onclick="pinDel()">⌫</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════ WEEK SELECT ════════════════════ -->
+<div class="screen" id="screen-weeks">
+  <div class="week-topbar">
+    <div class="week-topbar-left">
+      <h1 id="weekTopbarTitle">Cody</h1>
+      <p id="weekTopbarSub">Select a week to log</p>
+    </div>
+    <button class="week-signout" onclick="signOut()">Sign out</button>
+  </div>
+  <div class="week-list" id="weekList"></div>
+</div>
+
+<!-- ════════════════════ CODY TRACKER ════════════════════ -->
+<div class="screen" id="screen-cody">
+  <div class="demo-banner demo-banner-cody"><div class="demo-dot"></div>DEMO MODE — changes are not saved</div>
+  <div class="topbar">
+    <div class="topbar-left">
+      <h1>⛰ Cody</h1>
+      <span id="codyWeekLabel">Week 1 · Baseline</span>
+    </div>
+    <div class="topbar-right">
+      <div class="summit-pill">Aug 2026</div>
+      <button class="cody-signout" onclick="goToWeeks()">← Weeks</button>
+    </div>
+  </div>
+  <div class="nav-tabs" id="navTabs">
+    <button class="tab-btn active" onclick="showDay(0)">Mon</button>
+    <button class="tab-btn" onclick="showDay(1)">Tue</button>
+    <button class="tab-btn rest-tab" onclick="showDay(2)">Wed</button>
+    <button class="tab-btn" onclick="showDay(3)">Thu</button>
+    <button class="tab-btn rest-tab" onclick="showDay(4)">Fri</button>
+    <button class="tab-btn" onclick="showDay(5)">Sat</button>
+    <button class="tab-btn rest-tab" onclick="showDay(6)">Sun</button>
+    <button class="tab-btn" onclick="showDay(7)" style="border-color:rgba(92,219,143,0.3);color:#5cdb8f">Summary</button>
+  </div>
+
+  <!-- MONDAY -->
+  <div class="c-page active" id="page0">
+    <div class="day-header"><h2>Monday</h2><div class="day-meta"><span class="day-tag tag-strength">Lower body</span><span class="day-tag tag-strength">Core</span><span class="day-tag tag-rest">~50–60 min</span></div></div>
+    <div class="section-lbl">Warm-up</div>
+    <div class="ex-card" id="ex-mon-0"><div class="ex-top" onclick="toggleEx('mon-0')"><div class="ex-dot"></div><div class="ex-label"><div class="ex-name">Treadmill walk (2% incline)</div><div class="ex-detail">10 min · moderate pace</div></div><div class="ex-chevron" id="chev-mon-0">▼</div></div><div class="ex-log" id="log-mon-0"><div style="margin-top:10px"><div class="cardio-grid"><div class="cardio-field"><label>Duration (min)</label><input type="number" inputmode="decimal" placeholder="10" id="mon-0-dur" oninput="autoSave()"></div><div class="cardio-field"><label>Incline %</label><input type="number" inputmode="decimal" placeholder="2" id="mon-0-inc" oninput="autoSave()"></div></div><button class="done-btn" onclick="markDone('mon-0')">Mark complete ✓</button></div></div></div>
+    <div class="section-lbl">Main work</div>
+    <div class="ex-card" id="ex-mon-1"><div class="ex-top" onclick="toggleEx('mon-1')"><div class="ex-dot"></div><div class="ex-label"><div class="ex-name">Leg press machine</div><div class="ex-detail">3 sets × 12 reps · feet hip-width</div><div class="ex-note-text">★ Record baseline weight today</div></div><div class="ex-chevron" id="chev-mon-1">▼</div></div><div class="ex-log" id="log-mon-1"><div class="set-row-header" style="margin-top:10px"><span></span><span>Weight (lbs)</span><span>Reps</span><span>Feel</span></div><div class="sets-rows" id="sets-mon-1"></div><textarea class="notes-input" placeholder="Notes (pain level, how it felt...)" id="notes-mon-1" oninput="autoSave()"></textarea><button class="done-btn" onclick="markDone('mon-1')">Mark complete ✓</button></div></div>
+    <div class="ex-card" id="ex-mon-2"><div class="ex-top" onclick="toggleEx('mon-2')"><div class="ex-dot"></div><div class="ex-label"><div class="ex-name">Seated hamstring curl</div><div class="ex-detail">3 sets × 12 reps · controlled tempo</div></div><div class="ex-chevron" id="chev-mon-2">▼</div></div><div class="ex-log" id="log-mon-2"><div class="set-row-header" style="margin-top:10px"><span></span><span>Weight (lbs)</span><span>Reps</span><span>Feel</span></div><div class="sets-rows" id="sets-mon-2"></div><textarea class="notes-input" placeholder="Notes..." id="notes-mon-2" oninput="autoSave()"></textarea><button class="done-btn" onclick="markDone('mon-2')">Mark complete ✓</button></div></div>
+    <div class="ex-card" id="ex-mon-3"><div class="ex-top" onclick="toggleEx('mon-3')"><div class="ex-dot"></div><div class="ex-label"><div class="ex-name">Hip abductor machine</div><div class="ex-detail">3 sets × 15 reps · moderate resistance</div><div class="ex-note-text">Key sciatica exercise — glute med strengthening</div></div><div class="ex-chevron" id="chev-mon-3">▼</div></div><div class="ex-log" id="log-mon-3"><div class="set-row-header" style="margin-top:10px"><span></span><span>Weight (lbs)</span><span>Reps</span><span>Feel</span></div><div class="sets-rows" id="sets-mon-3"></div><textarea class="notes-input" placeholder="Notes..." id="notes-mon-3" oninput="autoSave()"></textarea><button class="done-btn" onclick="markDone('mon-3')">Mark complete ✓</button></div></div>
+    <div class="ex-card" id="ex-mon-4"><div class="ex-top" onclick="toggleEx('mon-4')"><div class="ex-dot"></div><div class="ex-label"><div class="ex-name">Seated calf raise</div><div class="ex-detail">3 sets × 15 reps</div></div><div class="ex-chevron" id="chev-mon-4">▼</div></div><div class="ex-log" id="log-mon-4"><div class="set-row-header" style="margin-top:10px"><span></span><span>Weight (lbs)</span><span>Reps</span><span>Feel</span></div><div class="sets-rows" id="sets-mon-4"></div><button class="done-btn" onclick="markDone('mon-4')">Mark complete ✓</button></div></div>
+    <div class="section-lbl">Core + mobility</div>
+    <div class="ex-card" id="ex-mon-5"><div class="ex-top" onclick="toggleEx('mon-5')"><div class="ex-dot"></div><div class="ex-label"><div class="ex-name">Dead bug</div><div class="ex-detail">3 sets × 8 each side · slow</div><div class="ex-note-text">Spine-neutral — essential for sciatica</div></div><div class="ex-chevron" id="chev-mon-5">▼</div></div><div class="ex-log" id="log-mon-5"><div class="sets-grid" style="grid-template-columns:1fr 1fr;"><div class="set-col"><label>Sets done</label><input type="number" inputmode="numeric" placeholder="3" id="mon-5-sets" oninput="autoSave()"></div><div class="set-col"><label>Reps/side</label><input type="number" inputmode="numeric" placeholder="8" id="mon-5-reps" oninput="autoSave()"></div></div><textarea class="notes-input" placeholder="Notes..." id="notes-mon-5" oninput="autoSave()"></textarea><button class="done-btn" onclick="markDone('mon-5')">Mark complete ✓</button></div></div>
+    <div class="ex-card" id="ex-mon-6"><div class="ex-top" onclick="toggleEx('mon-6')"><div class="ex-dot"></div><div class="ex-label"><div class="ex-name">Glute bridge</div><div class="ex-detail">3 sets × 15 reps · 2-sec hold at top</div></div><div class="ex-chevron" id="chev-mon-6">▼</div></div><div class="ex-log" id="log-mon-6"><div class="sets-grid" style="grid-template-columns:1fr 1fr;"><div class="set-col"><label>Sets done</label><input type="number" inputmode="numeric" placeholder="3" id="mon-6-sets" oninput="autoSave()"></div><div class="set-col"><label>Reps</label><input type="number" inputmode="numeric" placeholder="15" id="mon-6-reps" oninput="autoSave()"></div></div><textarea class="notes-input" placeholder="Any discomfort?" id="notes-mon-6" oninput="autoSave()"></textarea><button class="done-btn" onclick="markDone('mon-6')">Mark complete ✓</button></div></div>
+    <div class="ex-card" id="ex-mon-7"><div class="ex-top" onclick="toggleEx('mon-7')"><div class="ex-dot"></div><div class="ex-label"><div class="ex-name">Bird dog</div><div class="ex-detail">3 sets × 8 each side</div></div><div class="ex-chevron" id="chev-mon-7">▼</div></div><div class="ex-log" id="log-mon-7"><div class="sets-grid" style="grid-template-columns:1fr 1fr;"><div class="set-col"><label>Sets done</label><input type="number" inputmode="numeric" placeholder="3" id="mon-7-sets" oninput="autoSave()"></div><div class="set-col"><label>Reps/side</label><input type="number" inputmode="numeric" placeholder="8" id="mon-7-reps" oninput="autoSave()"></div></div><button class="done-btn" onclick="markDone('mon-7')">Mark complete ✓</button></div></div>
+    <div class="section-lbl">Session check-in</div>
+    <div class="pain-card"><h4>Sciatica discomfort today</h4><p>0 = none · 5 = moderate · 10 = severe</p><div class="pain-scale" id="pain-mon"></div></div>
+  </div>
+
+  <!-- TUESDAY -->
+  <div class="c-page" id="page1">
+    <div class="day-header"><h2>Tuesday</h2><div class="day-meta"><span class="day-tag tag-cardio">Cardio</span><span class="day-tag tag-cardio">Mobility</span><span class="day-tag tag-rest">~40–50 min</span></div></div>
+    <div class="section-lbl">Cardio (choose one)</div>
+    <div class="cardio-card"><h4>Dog walk / Treadmill walk</h4><div class="cardio-grid"><div class="cardio-field"><label>Activity</label><select id="tue-cardio-type" onchange="autoSave()"><option>Dog walk</option><option>Treadmill walk</option><option>Stationary bike</option></select></div><div class="cardio-field"><label>Duration (min)</label><input type="number" inputmode="decimal" placeholder="30" id="tue-dur" oninput="autoSave()"></div><div class="cardio-field"><label>Distance (miles)</label><input type="number" inputmode="decimal" placeholder="1.5" id="tue-dist" oninput="autoSave()"></div><div class="cardio-field"><label>Avg pace / feel</label><input type="text" placeholder="Easy / 2.8mph" id="tue-pace" oninput="autoSave()"></div></div></div>
+    <div class="section-lbl">Mobility (all three)</div>
+    <div class="ex-card" id="ex-tue-0"><div class="ex-top" onclick="toggleEx('tue-0')"><div class="ex-dot"></div><div class="ex-label"><div class="ex-name">Standing hip flexor stretch</div><div class="ex-detail">3 × 30 sec each side</div><div class="ex-note-text">Critical — tight hip flexors aggravate sciatica</div></div><div class="ex-chevron" id="chev-tue-0">▼</div></div><div class="ex-log" id="log-tue-0"><div class="sets-grid" style="grid-template-columns:1fr 1fr;"><div class="set-col"><label>Sets</label><input type="number" inputmode="numeric" placeholder="3" id="tue-0-sets" oninput="autoSave()"></div><div class="set-col"><label>Hold (sec)</label><input type="number" inputmode="numeric" placeholder="30" id="tue-0-hold" oninput="autoSave()"></div></div><button class="done-btn" onclick="markDone('tue-0')">Mark complete ✓</button></div></div>
+    <div class="ex-card" id="ex-tue-1"><div class="ex-top" onclick="toggleEx('tue-1')"><div class="ex-dot"></div><div class="ex-label"><div class="ex-name">Piriformis stretch (figure-4)</div><div class="ex-detail">3 × 30 sec each side</div><div class="ex-note-text">Loosens piriformis — can compress sciatic nerve</div></div><div class="ex-chevron" id="chev-tue-1">▼</div></div><div class="ex-log" id="log-tue-1"><div class="sets-grid" style="grid-template-columns:1fr 1fr;"><div class="set-col"><label>Sets</label><input type="number" inputmode="numeric" placeholder="3" id="tue-1-sets" oninput="autoSave()"></div><div class="set-col"><label>Hold (sec)</label><input type="number" inputmode="numeric" placeholder="30" id="tue-1-hold" oninput="autoSave()"></div></div><button class="done-btn" onclick="markDone('tue-1')">Mark complete ✓</button></div></div>
+    <div class="ex-card" id="ex-tue-2"><div class="ex-top" onclick="toggleEx('tue-2')"><div class="ex-dot"></div><div class="ex-label"><div class="ex-name">Cat-cow</div><div class="ex-detail">10 slow reps · breathe through each</div></div><div class="ex-chevron" id="chev-tue-2">▼</div></div><div class="ex-log" id="log-tue-2"><div class="sets-grid" style="grid-template-columns:1fr;"><div class="set-col"><label>Reps completed</label><input type="number" inputmode="numeric" placeholder="10" id="tue-2-reps" oninput="autoSave()"></div></div><button class="done-btn" onclick="markDone('tue-2')">Mark complete ✓</button></div></div>
+    <div class="section-lbl">Session check-in</div>
+    <div class="pain-card"><h4>Sciatica discomfort today</h4><p>0 = none · 5 = moderate · 10 = severe</p><div class="pain-scale" id="pain-tue"></div></div>
+  </div>
+
+  <!-- WEDNESDAY -->
+  <div class="c-page" id="page2">
+    <div class="day-header"><h2>Wednesday</h2><div class="day-meta"><span class="day-tag tag-rest">Active rest</span></div></div>
+    <div class="rest-card"><div class="rest-icon">🌿</div><h3>Rest day</h3><p>Full rest or a short 15–20 min dog walk. No gym. Sleep 7–9 hrs.</p><div class="walk-log"><label>Dog walk? Log it (minutes)</label><input type="number" inputmode="numeric" placeholder="Optional" id="wed-walk" oninput="autoSave()"></div></div>
+    <div class="section-lbl">Session check-in</div>
+    <div class="pain-card"><h4>Sciatica today</h4><p>How are you feeling at rest?</p><div class="pain-scale" id="pain-wed"></div></div>
+  </div>
+
+  <!-- THURSDAY -->
+  <div class="c-page" id="page3">
+    <div class="day-header"><h2>Thursday</h2><div class="day-meta"><span class="day-tag tag-strength">Upper body</span><span class="day-tag tag-strength">Core</span><span class="day-tag tag-rest">~50–60 min</span></div></div>
+    <div class="section-lbl">Warm-up</div>
+    <div class="ex-card" id="ex-thu-0"><div class="ex-top" onclick="toggleEx('thu-0')"><div class="ex-dot"></div><div class="ex-label"><div class="ex-name">Rowing machine</div><div class="ex-detail">5 min · easy pace</div></div><div class="ex-chevron" id="chev-thu-0">▼</div></div><div class="ex-log" id="log-thu-0"><div class="cardio-grid" style="margin-top:10px"><div class="cardio-field"><label>Duration (min)</label><input type="number" inputmode="decimal" placeholder="5" id="thu-0-dur" oninput="autoSave()"></div><div class="cardio-field"><label>Resistance</label><input type="number" inputmode="numeric" placeholder="3" id="thu-0-res" oninput="autoSave()"></div></div><button class="done-btn" onclick="markDone('thu-0')">Mark complete ✓</button></div></div>
+    <div class="section-lbl">Main work</div>
+    <div class="ex-card" id="ex-thu-1"><div class="ex-top" onclick="toggleEx('thu-1')"><div class="ex-dot"></div><div class="ex-label"><div class="ex-name">Chest press machine (seated)</div><div class="ex-detail">3 sets × 12 reps · moderate weight</div><div class="ex-note-text">★ Record baseline weight today</div></div><div class="ex-chevron" id="chev-thu-1">▼</div></div><div class="ex-log" id="log-thu-1"><div class="set-row-header" style="margin-top:10px"><span></span><span>Weight (lbs)</span><span>Reps</span><span>Feel</span></div><div class="sets-rows" id="sets-thu-1"></div><textarea class="notes-input" placeholder="Notes..." id="notes-thu-1" oninput="autoSave()"></textarea><button class="done-btn" onclick="markDone('thu-1')">Mark complete ✓</button></div></div>
+    <div class="ex-card" id="ex-thu-2"><div class="ex-top" onclick="toggleEx('thu-2')"><div class="ex-dot"></div><div class="ex-label"><div class="ex-name">Seated cable row</div><div class="ex-detail">3 sets × 12 reps · squeeze shoulder blades</div></div><div class="ex-chevron" id="chev-thu-2">▼</div></div><div class="ex-log" id="log-thu-2"><div class="set-row-header" style="margin-top:10px"><span></span><span>Weight (lbs)</span><span>Reps</span><span>Feel</span></div><div class="sets-rows" id="sets-thu-2"></div><button class="done-btn" onclick="markDone('thu-2')">Mark complete ✓</button></div></div>
+    <div class="ex-card" id="ex-thu-3"><div class="ex-top" onclick="toggleEx('thu-3')"><div class="ex-dot"></div><div class="ex-label"><div class="ex-name">Lat pulldown</div><div class="ex-detail">3 sets × 12 reps · controlled descent</div><div class="ex-note-text">Critical for hiking pack carry strength</div></div><div class="ex-chevron" id="chev-thu-3">▼</div></div><div class="ex-log" id="log-thu-3"><div class="set-row-header" style="margin-top:10px"><span></span><span>Weight (lbs)</span><span>Reps</span><span>Feel</span></div><div class="sets-rows" id="sets-thu-3"></div><button class="done-btn" onclick="markDone('thu-3')">Mark complete ✓</button></div></div>
+    <div class="ex-card" id="ex-thu-4"><div class="ex-top" onclick="toggleEx('thu-4')"><div class="ex-dot"></div><div class="ex-label"><div class="ex-name">DB shoulder press (seated)</div><div class="ex-detail">3 sets × 10 reps · light-moderate</div></div><div class="ex-chevron" id="chev-thu-4">▼</div></div><div class="ex-log" id="log-thu-4"><div class="set-row-header" style="margin-top:10px"><span></span><span>Weight (lbs)</span><span>Reps</span><span>Feel</span></div><div class="sets-rows" id="sets-thu-4"></div><button class="done-btn" onclick="markDone('thu-4')">Mark complete ✓</button></div></div>
+    <div class="ex-card" id="ex-thu-5"><div class="ex-top" onclick="toggleEx('thu-5')"><div class="ex-dot"></div><div class="ex-label"><div class="ex-name">Bicep curl (dumbbell)</div><div class="ex-detail">2 sets × 12 reps</div></div><div class="ex-chevron" id="chev-thu-5">▼</div></div><div class="ex-log" id="log-thu-5"><div class="set-row-header" style="margin-top:10px"><span></span><span>Weight (lbs)</span><span>Reps</span><span>Feel</span></div><div class="sets-rows" id="sets-thu-5"></div><button class="done-btn" onclick="markDone('thu-5')">Mark complete ✓</button></div></div>
+    <div class="ex-card" id="ex-thu-6"><div class="ex-top" onclick="toggleEx('thu-6')"><div class="ex-dot"></div><div class="ex-label"><div class="ex-name">Tricep pushdown (cable)</div><div class="ex-detail">2 sets × 12 reps</div></div><div class="ex-chevron" id="chev-thu-6">▼</div></div><div class="ex-log" id="log-thu-6"><div class="set-row-header" style="margin-top:10px"><span></span><span>Weight (lbs)</span><span>Reps</span><span>Feel</span></div><div class="sets-rows" id="sets-thu-6"></div><button class="done-btn" onclick="markDone('thu-6')">Mark complete ✓</button></div></div>
+    <div class="section-lbl">Core</div>
+    <div class="ex-card" id="ex-thu-7"><div class="ex-top" onclick="toggleEx('thu-7')"><div class="ex-dot"></div><div class="ex-label"><div class="ex-name">Plank (knees or full)</div><div class="ex-detail">3 sets · 20–30 sec · flat back</div></div><div class="ex-chevron" id="chev-thu-7">▼</div></div><div class="ex-log" id="log-thu-7"><div class="sets-grid" style="grid-template-columns:1fr 1fr 1fr;"><div class="set-col"><label>Set 1 (sec)</label><input type="number" inputmode="numeric" placeholder="20" id="thu-7-s1" oninput="autoSave()"></div><div class="set-col"><label>Set 2 (sec)</label><input type="number" inputmode="numeric" placeholder="20" id="thu-7-s2" oninput="autoSave()"></div><div class="set-col"><label>Set 3 (sec)</label><input type="number" inputmode="numeric" placeholder="20" id="thu-7-s3" oninput="autoSave()"></div></div><div style="margin-top:8px"><select style="width:100%;background:#1e2421;border:1px solid rgba(255,255,255,0.12);color:#e8ede9;font-family:'DM Mono',monospace;font-size:14px;padding:10px;border-radius:8px;" id="thu-7-type" onchange="autoSave()"><option>Knees plank</option><option>Full plank</option></select></div><button class="done-btn" onclick="markDone('thu-7')">Mark complete ✓</button></div></div>
+    <div class="ex-card" id="ex-thu-8"><div class="ex-top" onclick="toggleEx('thu-8')"><div class="ex-dot"></div><div class="ex-label"><div class="ex-name">Side-lying clamshell</div><div class="ex-detail">3 sets × 12 each side</div><div class="ex-note-text">Reduces sciatic nerve load via glute activation</div></div><div class="ex-chevron" id="chev-thu-8">▼</div></div><div class="ex-log" id="log-thu-8"><div class="sets-grid" style="grid-template-columns:1fr 1fr;"><div class="set-col"><label>Sets done</label><input type="number" inputmode="numeric" placeholder="3" id="thu-8-sets" oninput="autoSave()"></div><div class="set-col"><label>Reps/side</label><input type="number" inputmode="numeric" placeholder="12" id="thu-8-reps" oninput="autoSave()"></div></div><button class="done-btn" onclick="markDone('thu-8')">Mark complete ✓</button></div></div>
+    <div class="section-lbl">Session check-in</div>
+    <div class="pain-card"><h4>Sciatica discomfort today</h4><p>0 = none · 5 = moderate · 10 = severe</p><div class="pain-scale" id="pain-thu"></div></div>
+  </div>
+
+  <!-- FRIDAY -->
+  <div class="c-page" id="page4">
+    <div class="day-header"><h2>Friday</h2><div class="day-meta"><span class="day-tag tag-rest">Active rest</span></div></div>
+    <div class="rest-card"><div class="rest-icon">🐕</div><h3>Rest day</h3><p>Rest or light dog walk (15 min). Big training day Saturday — conserve energy.</p><div class="walk-log"><label>Dog walk? Log it (minutes)</label><input type="number" inputmode="numeric" placeholder="Optional" id="fri-walk" oninput="autoSave()"></div></div>
+    <div class="section-lbl">Session check-in</div>
+    <div class="pain-card"><h4>Sciatica today</h4><p>How are you feeling heading into Saturday?</p><div class="pain-scale" id="pain-fri"></div></div>
+  </div>
+
+  <!-- SATURDAY -->
+  <div class="c-page" id="page5">
+    <div class="day-header"><h2>Saturday</h2><div class="day-meta"><span class="day-tag tag-full">⛰ Rainier prep</span><span class="day-tag tag-strength">Full body</span><span class="day-tag tag-rest">~60–75 min</span></div></div>
+    <div class="section-lbl">Rainier training — incline walk</div>
+    <div class="cardio-card" style="border-color:rgba(92,219,143,0.2)"><h4 style="color:#5cdb8f">⛰ Incline treadmill (weekly summit session)</h4><div class="cardio-grid"><div class="cardio-field"><label>Duration (min)</label><input type="number" inputmode="decimal" placeholder="20" id="sat-inc-dur" oninput="autoSave()"></div><div class="cardio-field"><label>Incline %</label><input type="number" inputmode="decimal" placeholder="8" id="sat-inc-pct" oninput="autoSave()"></div><div class="cardio-field"><label>Speed (mph)</label><input type="number" inputmode="decimal" placeholder="2.8" id="sat-inc-spd" oninput="autoSave()"></div><div class="cardio-field"><label>Felt (1–10)</label><input type="number" inputmode="numeric" placeholder="7" id="sat-inc-feel" min="1" max="10" oninput="autoSave()"></div></div></div>
+    <div class="section-lbl">Main work</div>
+    <div class="ex-card" id="ex-sat-0"><div class="ex-top" onclick="toggleEx('sat-0')"><div class="ex-dot"></div><div class="ex-label"><div class="ex-name">Goblet squat (light DB)</div><div class="ex-detail">3 sets × 10 reps · pain-free depth only</div><div class="ex-note-text">Assess squat comfort — note depth achieved</div></div><div class="ex-chevron" id="chev-sat-0">▼</div></div><div class="ex-log" id="log-sat-0"><div class="set-row-header" style="margin-top:10px"><span></span><span>Weight (lbs)</span><span>Reps</span><span>Feel</span></div><div class="sets-rows" id="sets-sat-0"></div><textarea class="notes-input" placeholder="Depth reached? Any discomfort?" id="notes-sat-0" oninput="autoSave()"></textarea><button class="done-btn" onclick="markDone('sat-0')">Mark complete ✓</button></div></div>
+    <div class="ex-card" id="ex-sat-1"><div class="ex-top" onclick="toggleEx('sat-1')"><div class="ex-dot"></div><div class="ex-label"><div class="ex-name">Romanian deadlift (light DBs)</div><div class="ex-detail">3 sets × 10 reps · hinge at hips</div><div class="ex-note-text">Note any lower back discomfort</div></div><div class="ex-chevron" id="chev-sat-1">▼</div></div><div class="ex-log" id="log-sat-1"><div class="set-row-header" style="margin-top:10px"><span></span><span>Weight (lbs)</span><span>Reps</span><span>Feel</span></div><div class="sets-rows" id="sets-sat-1"></div><textarea class="notes-input" placeholder="Notes..." id="notes-sat-1" oninput="autoSave()"></textarea><button class="done-btn" onclick="markDone('sat-1')">Mark complete ✓</button></div></div>
+    <div class="ex-card" id="ex-sat-2"><div class="ex-top" onclick="toggleEx('sat-2')"><div class="ex-dot"></div><div class="ex-label"><div class="ex-name">Seated cable row</div><div class="ex-detail">3 sets × 12 reps</div></div><div class="ex-chevron" id="chev-sat-2">▼</div></div><div class="ex-log" id="log-sat-2"><div class="set-row-header" style="margin-top:10px"><span></span><span>Weight (lbs)</span><span>Reps</span><span>Feel</span></div><div class="sets-rows" id="sets-sat-2"></div><button class="done-btn" onclick="markDone('sat-2')">Mark complete ✓</button></div></div>
+    <div class="section-lbl">Core</div>
+    <div class="ex-card" id="ex-sat-3"><div class="ex-top" onclick="toggleEx('sat-3')"><div class="ex-dot"></div><div class="ex-label"><div class="ex-name">Dead bug</div><div class="ex-detail">2 sets × 8 each side</div></div><div class="ex-chevron" id="chev-sat-3">▼</div></div><div class="ex-log" id="log-sat-3"><div class="sets-grid" style="grid-template-columns:1fr 1fr;"><div class="set-col"><label>Sets done</label><input type="number" inputmode="numeric" placeholder="2" id="sat-3-sets" oninput="autoSave()"></div><div class="set-col"><label>Reps/side</label><input type="number" inputmode="numeric" placeholder="8" id="sat-3-reps" oninput="autoSave()"></div></div><button class="done-btn" onclick="markDone('sat-3')">Mark complete ✓</button></div></div>
+    <div class="ex-card" id="ex-sat-4"><div class="ex-top" onclick="toggleEx('sat-4')"><div class="ex-dot"></div><div class="ex-label"><div class="ex-name">Glute bridge hold</div><div class="ex-detail">2 sets × 20 sec holds</div></div><div class="ex-chevron" id="chev-sat-4">▼</div></div><div class="ex-log" id="log-sat-4"><div class="sets-grid" style="grid-template-columns:1fr 1fr;"><div class="set-col"><label>Hold 1 (sec)</label><input type="number" inputmode="numeric" placeholder="20" id="sat-4-h1" oninput="autoSave()"></div><div class="set-col"><label>Hold 2 (sec)</label><input type="number" inputmode="numeric" placeholder="20" id="sat-4-h2" oninput="autoSave()"></div></div><button class="done-btn" onclick="markDone('sat-4')">Mark complete ✓</button></div></div>
+    <div class="section-lbl">Session check-in</div>
+    <div class="pain-card"><h4>Sciatica discomfort today</h4><p>0 = none · 5 = moderate · 10 = severe</p><div class="pain-scale" id="pain-sat"></div></div>
+  </div>
+
+  <!-- SUNDAY -->
+  <div class="c-page" id="page6">
+    <div class="day-header"><h2>Sunday</h2><div class="day-meta"><span class="day-tag tag-rest">Full rest</span></div></div>
+    <div class="rest-card"><div class="rest-icon">🏔</div><h3>Full rest</h3><p>Complete rest. Dog walk optional. Prep your gym bag for Monday.</p><div class="walk-log"><label>Dog walk? Log it (minutes)</label><input type="number" inputmode="numeric" placeholder="Optional" id="sun-walk" oninput="autoSave()"></div></div>
+    <div style="margin-top:16px"><div class="pain-card"><h4>Weekly weight (optional)</h4><p>Weigh in Sunday morning for most consistent tracking</p><div class="sets-grid" style="grid-template-columns:1fr;margin-top:10px"><div class="set-col"><label>Weight (lbs)</label><input type="number" inputmode="decimal" placeholder="270" id="sun-weight" oninput="autoSave()"></div></div></div></div>
+    <div class="section-lbl">Overall week check-in</div>
+    <div class="pain-card"><h4>Sciatica — end of week</h4><p>How does your back feel after the full week?</p><div class="pain-scale" id="pain-sun"></div></div>
+  </div>
+
+  <!-- SUMMARY -->
+  <div class="c-page" id="page7">
+    <div class="day-header"><h2>Week 1 Summary</h2><div class="day-meta"><span class="day-tag tag-cardio">Progress report</span></div></div>
+    <div class="summary-card" id="summary-stats"><h3>Week at a glance</h3><div class="stat-row"><span class="stat-label">Sessions logged</span><span class="stat-val green" id="sum-sessions">0 / 4</span></div><div class="stat-row"><span class="stat-label">Exercises completed</span><span class="stat-val" id="sum-exercises">0</span></div><div class="stat-row"><span class="stat-label">Avg sciatica score</span><span class="stat-val" id="sum-pain">—</span></div><div class="stat-row"><span class="stat-label">Sunday weight</span><span class="stat-val" id="sum-weight">—</span></div><div class="stat-row"><span class="stat-label">Rainier incline done</span><span class="stat-val" id="sum-rainier">—</span></div></div>
+    <button class="export-btn" onclick="generateMarkdown()">Generate export ↓</button>
+    <button class="copy-btn" onclick="copyMarkdown()">Copy to clipboard</button>
+    <div class="md-preview" id="md-preview"></div>
+  </div>
+
+  <!-- Save bar for Cody -->
+  <div class="save-bar save-bar-cody" id="saveBarCody">
+    <div class="nav-arrows">
+      <button class="nav-arrow" onclick="showDay(Math.max(0,currentDay-1))">←</button>
+      <button class="nav-arrow" onclick="showDay(Math.min(7,currentDay+1))">→</button>
+    </div>
+    <span class="last-saved" id="lastSavedCody">Not yet saved</span>
+    <button class="save-btn-manual" onclick="manualSave()">Save</button>
+  </div>
+</div>
+
+<!-- ════════════════════ KYLIE TRACKER ════════════════════ -->
+<div class="screen" id="screen-kylie">
+  <div class="demo-banner demo-banner-kylie"><div class="demo-dot"></div>DEMO MODE — changes are not saved</div>
+  <div class="k-topbar">
+    <div class="k-topbar-inner">
+      <div>
+        <h1 class="k-topbar-h1">Kylie</h1>
+        <span id="kylieWeekLabel">Week 1 · Mar 24–29</span>
+      </div>
+      <div class="k-header-right">
+        <div class="k-chip">Rainier: Aug 2026</div>
+        <button class="k-signout" onclick="goToWeeks()">← Weeks</button>
+      </div>
+    </div>
+  </div>
+  <div class="k-strip" id="kStrip"></div>
+  <div class="k-progress">
+    <div class="k-progress-row"><span class="k-progress-label">Week progress</span><span class="k-progress-count" id="kProgressCount">0 / 4 sessions</span></div>
+    <div class="k-progress-track"><div class="k-progress-fill" id="kProgressFill" style="width:0%"></div></div>
+  </div>
+  <div class="k-content" id="kContent"></div>
+
+  <!-- Save bar for Kylie -->
+  <div class="save-bar save-bar-kylie" id="saveBarKylie">
+    <span class="last-saved" id="lastSavedKylie">Not yet saved</span>
+    <button class="save-btn-manual" onclick="manualSave()">Save</button>
+  </div>
+</div>
+
+<!-- ════════════════════ SCRIPTS ════════════════════ -->
+<!-- Load order matters: config → state → supabase → screens → weeks → cody → kylie → app -->
+<script src="js/config.js"></script>
+<script src="js/state.js"></script>
+<script src="js/supabase.js"></script>
+<script src="js/screens.js"></script>
+<script src="js/weeks.js"></script>
+<script src="js/cody.js"></script>
+<script src="js/kylie.js"></script>
+<script src="js/app.js"></script>
+
+</body>
+</html>
+
+<!-- ════════════════════════════════════════
+SETUP INSTRUCTIONS (keep this section for reference)
+════════════════════════════════════════
+
+STEP 1 — Create a Supabase project
+  • Go to https://supabase.com → New project → free tier
+  • Note your Project URL and anon/public API key (Settings → API)
+
+STEP 2 — Create the database table
+  Run this SQL in the Supabase SQL editor (Database → SQL Editor):
+
+  create table if not exists tracker_data (
+    user_id text not null,
+    week text not null,
+    data text not null,
+    updated_at timestamptz default now(),
+    primary key (user_id, week)
+  );
+
+  -- Allow anonymous read/write (your PIN is the security layer)
+  alter table tracker_data enable row level security;
+  create policy "Public access" on tracker_data
+    for all using (true) with check (true);
+
+STEP 3 — Fill in the config in js/config.js:
+  const SUPABASE_URL = 'https://YOUR_PROJECT_ID.supabase.co';
+  const SUPABASE_ANON_KEY = 'your_anon_key_here';
+  const PINS = {
+    cody: '123456',   ← Change to your desired PIN
+    kylie: '654321'   ← Change to your desired PIN
+  };
+
+STEP 4 — Deploy to Netlify
+  • Go to https://netlify.com → "Add new site" → "Deploy manually"
+  • Drag and drop the entire folder (not just index.html) into the deploy zone
+  • You get a free URL like https://your-app.netlify.app
+  • Optionally set a custom domain in Site Settings
+
+That's it! Progress saves to the cloud on every keystroke.
+Add more weeks by appending to the WEEKS array in js/weeks.js.
+
+════════════════════════════════════════ -->
