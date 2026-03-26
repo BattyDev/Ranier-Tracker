@@ -1,18 +1,19 @@
 /**
- * Rainier Training Tracker — Remote MCP Server
+ * Rainier Training Tracker — Remote MCP Server (Streamable HTTP)
  *
- * This is a Cloudflare Worker that exposes MCP tools for Claude
- * to read and write workout plans in Supabase.
+ * Cloudflare Worker implementing the MCP Streamable HTTP transport.
+ * Claude Desktop connects via POST with JSON-RPC messages.
  *
  * Deploy: cd mcp-server && npx wrangler deploy
  * Secrets: npx wrangler secret put SUPABASE_SERVICE_KEY
- *
- * Connect to Claude Desktop via the MCP server URL.
+ *          npx wrangler secret put SHARED_SECRET
  */
 
 import { getSupabase, Env } from './supabase';
 import { getUserProfile, getCurrentPlan, getExerciseLogs, getProgressSummary } from './tools/read';
 import { createWeekPlan, updateExercise, addExercise, removeExercise, updatePlanStatus } from './tools/write';
+
+const PROTOCOL_VERSION = '2025-03-26';
 
 // MCP tool definitions
 const TOOLS = [
@@ -20,7 +21,7 @@ const TOOLS = [
     name: 'get_user_profile',
     description: 'Get a user\'s profile including goals, constraints, and preferences. Use this to understand who you\'re planning for.',
     inputSchema: {
-      type: 'object',
+      type: 'object' as const,
       properties: {
         user_name: { type: 'string', description: 'User name: "cody" or "kylie"' },
       },
@@ -31,7 +32,7 @@ const TOOLS = [
     name: 'get_current_plan',
     description: 'Get the full workout plan for a user\'s specific week, including all days, sections, and exercises with their input configurations.',
     inputSchema: {
-      type: 'object',
+      type: 'object' as const,
       properties: {
         user_name: { type: 'string', description: 'User name: "cody" or "kylie"' },
         week_number: { type: 'number', description: 'Week number (1, 2, 3, etc.)' },
@@ -43,7 +44,7 @@ const TOOLS = [
     name: 'get_exercise_logs',
     description: 'Get all exercise log data for a user\'s specific week. Shows what they actually did — weights, reps, completion status, etc.',
     inputSchema: {
-      type: 'object',
+      type: 'object' as const,
       properties: {
         user_name: { type: 'string', description: 'User name: "cody" or "kylie"' },
         week_number: { type: 'number', description: 'Week number' },
@@ -55,7 +56,7 @@ const TOOLS = [
     name: 'get_progress_summary',
     description: 'Get aggregated progress stats across a range of weeks — completion rates, pain trends, etc.',
     inputSchema: {
-      type: 'object',
+      type: 'object' as const,
       properties: {
         user_name: { type: 'string', description: 'User name: "cody" or "kylie"' },
         from_week: { type: 'number', description: 'Start week number' },
@@ -68,7 +69,7 @@ const TOOLS = [
     name: 'create_week_plan',
     description: 'Create or replace a full weekly workout plan for a user. Provide all days, sections, and exercises. Each exercise needs an input_config that defines what fields the frontend renders. Use type "weighted_sets" for exercises with weight/reps/feel per set, or type "fields" with a fields array for everything else.',
     inputSchema: {
-      type: 'object',
+      type: 'object' as const,
       properties: {
         user_name: { type: 'string', description: 'User name: "cody" or "kylie"' },
         week_number: { type: 'number', description: 'Week number' },
@@ -125,7 +126,7 @@ const TOOLS = [
     name: 'update_exercise',
     description: 'Update a single exercise\'s properties (name, detail, note, input_config, etc.)',
     inputSchema: {
-      type: 'object',
+      type: 'object' as const,
       properties: {
         exercise_id: { type: 'string', description: 'UUID of the exercise to update' },
         changes: { type: 'object', description: 'Object of fields to update' },
@@ -137,7 +138,7 @@ const TOOLS = [
     name: 'add_exercise',
     description: 'Add a new exercise to an existing section',
     inputSchema: {
-      type: 'object',
+      type: 'object' as const,
       properties: {
         section_id: { type: 'string', description: 'UUID of the section to add to' },
         name: { type: 'string' },
@@ -154,7 +155,7 @@ const TOOLS = [
     name: 'remove_exercise',
     description: 'Remove an exercise from the plan',
     inputSchema: {
-      type: 'object',
+      type: 'object' as const,
       properties: {
         exercise_id: { type: 'string', description: 'UUID of the exercise to remove' },
       },
@@ -165,7 +166,7 @@ const TOOLS = [
     name: 'update_plan_status',
     description: 'Update a plan\'s status (active, completed, draft)',
     inputSchema: {
-      type: 'object',
+      type: 'object' as const,
       properties: {
         plan_id: { type: 'string', description: 'UUID of the plan' },
         status: { type: 'string', enum: ['active', 'completed', 'draft'] },
@@ -175,133 +176,248 @@ const TOOLS = [
   },
 ];
 
-// Handle MCP JSON-RPC requests
-async function handleMCPRequest(request: Request, env: Env): Promise<Response> {
-  const body: any = await request.json();
-  const { method, params, id } = body;
-
+// Execute a tool call
+async function executeTool(env: Env, toolName: string, args: any): Promise<any> {
   const sb = getSupabase(env.SUPABASE_URL, env.SUPABASE_SERVICE_KEY);
 
-  // JSON-RPC response helper
-  const respond = (result: any) => new Response(JSON.stringify({ jsonrpc: '2.0', id, result }), {
-    headers: { 'Content-Type': 'application/json' },
-  });
+  switch (toolName) {
+    case 'get_user_profile':
+      return await getUserProfile(sb, args.user_name);
+    case 'get_current_plan':
+      return await getCurrentPlan(sb, args.user_name, args.week_number);
+    case 'get_exercise_logs':
+      return await getExerciseLogs(sb, args.user_name, args.week_number);
+    case 'get_progress_summary':
+      return await getProgressSummary(sb, args.user_name, args.from_week, args.to_week);
+    case 'create_week_plan':
+      return await createWeekPlan(sb, args.user_name, {
+        week_number: args.week_number,
+        week_label: args.week_label,
+        week_subtitle: args.week_subtitle,
+        days: args.days,
+      });
+    case 'update_exercise':
+      return await updateExercise(sb, args.exercise_id, args.changes);
+    case 'add_exercise':
+      return await addExercise(sb, args.section_id, {
+        name: args.name,
+        detail: args.detail,
+        note: args.note,
+        exercise_type: args.exercise_type,
+        input_config: args.input_config,
+        is_rainier: args.is_rainier,
+      });
+    case 'remove_exercise':
+      return await removeExercise(sb, args.exercise_id);
+    case 'update_plan_status':
+      return await updatePlanStatus(sb, args.plan_id, args.status);
+    default:
+      throw new Error(`Unknown tool: ${toolName}`);
+  }
+}
 
-  const respondError = (code: number, message: string) => new Response(JSON.stringify({
-    jsonrpc: '2.0', id, error: { code, message },
-  }), { headers: { 'Content-Type': 'application/json' } });
+// Process a single JSON-RPC message, return response or null for notifications
+async function processMessage(body: any, env: Env): Promise<any | null> {
+  const { method, params, id } = body;
+
+  // Notifications (no id) don't get responses
+  const isNotification = id === undefined || id === null;
 
   try {
     switch (method) {
       case 'initialize':
-        return respond({
-          protocolVersion: '2024-11-05',
-          capabilities: { tools: {} },
-          serverInfo: { name: 'rainier-tracker', version: '1.0.0' },
-        });
+        if (isNotification) return null;
+        return {
+          jsonrpc: '2.0',
+          id,
+          result: {
+            protocolVersion: PROTOCOL_VERSION,
+            capabilities: { tools: {} },
+            serverInfo: { name: 'rainier-tracker', version: '1.0.0' },
+          },
+        };
+
+      case 'notifications/initialized':
+        // Client confirming initialization — no response needed
+        return null;
+
+      case 'ping':
+        if (isNotification) return null;
+        return { jsonrpc: '2.0', id, result: {} };
 
       case 'tools/list':
-        return respond({ tools: TOOLS });
+        if (isNotification) return null;
+        return { jsonrpc: '2.0', id, result: { tools: TOOLS } };
 
       case 'tools/call': {
+        if (isNotification) return null;
         const toolName = params?.name;
         const args = params?.arguments || {};
-        let result: any;
 
-        switch (toolName) {
-          case 'get_user_profile':
-            result = await getUserProfile(sb, args.user_name);
-            break;
-          case 'get_current_plan':
-            result = await getCurrentPlan(sb, args.user_name, args.week_number);
-            break;
-          case 'get_exercise_logs':
-            result = await getExerciseLogs(sb, args.user_name, args.week_number);
-            break;
-          case 'get_progress_summary':
-            result = await getProgressSummary(sb, args.user_name, args.from_week, args.to_week);
-            break;
-          case 'create_week_plan':
-            result = await createWeekPlan(sb, args.user_name, {
-              week_number: args.week_number,
-              week_label: args.week_label,
-              week_subtitle: args.week_subtitle,
-              days: args.days,
-            });
-            break;
-          case 'update_exercise':
-            result = await updateExercise(sb, args.exercise_id, args.changes);
-            break;
-          case 'add_exercise':
-            result = await addExercise(sb, args.section_id, {
-              name: args.name,
-              detail: args.detail,
-              note: args.note,
-              exercise_type: args.exercise_type,
-              input_config: args.input_config,
-              is_rainier: args.is_rainier,
-            });
-            break;
-          case 'remove_exercise':
-            result = await removeExercise(sb, args.exercise_id);
-            break;
-          case 'update_plan_status':
-            result = await updatePlanStatus(sb, args.plan_id, args.status);
-            break;
-          default:
-            return respondError(-32601, `Unknown tool: ${toolName}`);
+        try {
+          const result = await executeTool(env, toolName, args);
+          return {
+            jsonrpc: '2.0',
+            id,
+            result: {
+              content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
+            },
+          };
+        } catch (e: any) {
+          return {
+            jsonrpc: '2.0',
+            id,
+            result: {
+              content: [{ type: 'text', text: `Error: ${e.message}` }],
+              isError: true,
+            },
+          };
         }
-
-        return respond({
-          content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
-        });
       }
 
       default:
-        return respondError(-32601, `Unknown method: ${method}`);
+        if (isNotification) return null;
+        return {
+          jsonrpc: '2.0',
+          id,
+          error: { code: -32601, message: `Unknown method: ${method}` },
+        };
     }
   } catch (e: any) {
-    return respondError(-32000, e.message || 'Internal error');
+    if (isNotification) return null;
+    return {
+      jsonrpc: '2.0',
+      id,
+      error: { code: -32000, message: e.message || 'Internal error' },
+    };
   }
 }
 
+// Format a JSON-RPC response as an SSE event
+function sseEvent(data: any): string {
+  return `event: message\ndata: ${JSON.stringify(data)}\n\n`;
+}
+
+// CORS headers shared across all responses
+const CORS_HEADERS: Record<string, string> = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization, Mcp-Session-Id, Accept',
+  'Access-Control-Expose-Headers': 'Mcp-Session-Id',
+};
+
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
-    // CORS for preflight
+    const url = new URL(request.url);
+
+    // CORS preflight
     if (request.method === 'OPTIONS') {
-      return new Response(null, {
-        headers: {
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Methods': 'POST, OPTIONS',
-          'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-        },
-      });
+      return new Response(null, { headers: CORS_HEADERS });
     }
 
-    // Optional: shared secret auth
+    // Auth check (skip for OPTIONS which already returned)
     if (env.SHARED_SECRET) {
       const auth = request.headers.get('Authorization');
       if (auth !== `Bearer ${env.SHARED_SECRET}`) {
-        return new Response('Unauthorized', { status: 401 });
+        return new Response('Unauthorized', { status: 401, headers: CORS_HEADERS });
       }
     }
 
-    if (request.method === 'POST') {
-      const response = await handleMCPRequest(request, env);
-      // Add CORS headers
-      const headers = new Headers(response.headers);
-      headers.set('Access-Control-Allow-Origin', '*');
-      return new Response(response.body, { status: response.status, headers });
+    // GET /mcp or GET / — SSE endpoint (for clients that open a listening stream)
+    if (request.method === 'GET') {
+      const accept = request.headers.get('Accept') || '';
+      if (accept.includes('text/event-stream')) {
+        // Return an open SSE stream — we don't push server-initiated messages,
+        // but some clients expect to be able to open this.
+        const body = new ReadableStream({
+          start(controller) {
+            controller.enqueue(new TextEncoder().encode(': ping\n\n'));
+          },
+        });
+        return new Response(body, {
+          headers: {
+            ...CORS_HEADERS,
+            'Content-Type': 'text/event-stream',
+            'Cache-Control': 'no-cache',
+            'Connection': 'keep-alive',
+          },
+        });
+      }
+
+      // Health check (non-SSE GET)
+      return new Response(JSON.stringify({
+        name: 'rainier-tracker-mcp',
+        version: '1.0.0',
+        description: 'MCP server for Rainier Training Tracker',
+        tools: TOOLS.map(t => t.name),
+      }), {
+        headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+      });
     }
 
-    // Health check
-    return new Response(JSON.stringify({
-      name: 'rainier-tracker-mcp',
-      version: '1.0.0',
-      description: 'MCP server for Rainier Training Tracker — read/write workout plans in Supabase',
-      tools: TOOLS.map(t => t.name),
-    }), {
-      headers: { 'Content-Type': 'application/json' },
-    });
+    // DELETE — session cleanup (acknowledge it)
+    if (request.method === 'DELETE') {
+      return new Response(null, { status: 200, headers: CORS_HEADERS });
+    }
+
+    // POST — main MCP message handler
+    if (request.method === 'POST') {
+      let body: any;
+      try {
+        body = await request.json();
+      } catch {
+        return new Response(JSON.stringify({
+          jsonrpc: '2.0', id: null, error: { code: -32700, message: 'Parse error' },
+        }), { status: 400, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } });
+      }
+
+      // Check if client wants SSE response
+      const accept = request.headers.get('Accept') || '';
+      const wantsSSE = accept.includes('text/event-stream');
+
+      // Handle batch requests (array of messages)
+      if (Array.isArray(body)) {
+        const results = await Promise.all(body.map((msg: any) => processMessage(msg, env)));
+        const responses = results.filter((r: any) => r !== null);
+
+        if (responses.length === 0) {
+          return new Response(null, { status: 202, headers: CORS_HEADERS });
+        }
+
+        if (wantsSSE) {
+          let sseBody = '';
+          for (const resp of responses) {
+            sseBody += sseEvent(resp);
+          }
+          return new Response(sseBody, {
+            headers: { ...CORS_HEADERS, 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache' },
+          });
+        }
+
+        return new Response(JSON.stringify(responses), {
+          headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+        });
+      }
+
+      // Single message
+      const result = await processMessage(body, env);
+
+      // Notification — no response body
+      if (result === null) {
+        return new Response(null, { status: 202, headers: CORS_HEADERS });
+      }
+
+      if (wantsSSE) {
+        return new Response(sseEvent(result), {
+          headers: { ...CORS_HEADERS, 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache' },
+        });
+      }
+
+      return new Response(JSON.stringify(result), {
+        headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+      });
+    }
+
+    return new Response('Method not allowed', { status: 405, headers: CORS_HEADERS });
   },
 };
