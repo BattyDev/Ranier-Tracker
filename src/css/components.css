@@ -195,6 +195,19 @@
   border: 1px solid var(--tag-rainier-border); font-family: 'Syne', sans-serif; font-weight: 600;
   flex-shrink: 0;
 }
+.ex-info-btn {
+  width: 24px; height: 24px; border-radius: 50%; border: 1px solid var(--border-input);
+  background: var(--bg-input); color: var(--accent); font-size: 12px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  cursor: pointer; transition: background 0.2s, border-color 0.2s;
+}
+.ex-info-btn:hover { border-color: var(--accent); background: var(--accent-bg); }
+.ex-description {
+  padding: 10px 14px; margin: 0 14px 8px; border-radius: 8px;
+  background: var(--accent-bg); border: 1px solid var(--accent-border);
+  font-size: 13px; color: var(--text-secondary); line-height: 1.5;
+  font-family: 'DM Sans', sans-serif;
+}
 .ex-chevron { color: var(--text-secondary); font-size: 10px; transition: transform 0.2s; flex-shrink: 0; }
 .ex-chevron.open { transform: rotate(180deg); }
 .ex-log { display: none; padding: 0 14px 14px; border-top: 1px solid var(--border); }
@@ -230,7 +243,7 @@
 .field-item select option { background: var(--bg-input); }
 .field-item textarea {
   width: 100%; background: var(--bg-input); border: 1px solid var(--border-input);
-  color: var(--text-primary); font-family: 'DM Mono', monospace; font-size: 14px;
+  color: var(--text-primary); font-family: 'DM Mono', monospace; font-size: 16px;
   padding: 10px; border-radius: 8px; resize: none; min-height: 52px;
 }
 .field-item textarea:focus { outline: none; border-color: var(--accent); }
@@ -253,7 +266,7 @@
 .notes-input {
   width: 100%; margin-top: 8px;
   background: var(--bg-input); border: 1px solid var(--border-input);
-  color: var(--text-primary); font-family: 'DM Mono', monospace; font-size: 14px;
+  color: var(--text-primary); font-family: 'DM Mono', monospace; font-size: 16px;
   padding: 10px; border-radius: 8px; resize: none; min-height: 52px;
 }
 .notes-input:focus { outline: none; border-color: var(--accent); }

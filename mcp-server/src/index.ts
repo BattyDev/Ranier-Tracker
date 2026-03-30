@@ -103,6 +103,7 @@ const TOOLS = [
                           name: { type: 'string' },
                           detail: { type: 'string' },
                           note: { type: 'string' },
+                          description: { type: 'string', description: 'Plain-language explanation of the exercise: what it is, proper form, and why it\'s in the plan. Shown via an info button on the frontend.' },
                           exercise_type: { type: 'string' },
                           input_config: { type: 'object', description: 'JSON config defining what inputs to render' },
                           is_rainier: { type: 'boolean' },
@@ -144,6 +145,7 @@ const TOOLS = [
         name: { type: 'string' },
         detail: { type: 'string' },
         note: { type: 'string' },
+        description: { type: 'string', description: 'Plain-language explanation of the exercise' },
         exercise_type: { type: 'string' },
         input_config: { type: 'object' },
         is_rainier: { type: 'boolean' },
@@ -203,6 +205,7 @@ async function executeTool(env: Env, toolName: string, args: any): Promise<any> 
         name: args.name,
         detail: args.detail,
         note: args.note,
+        description: args.description,
         exercise_type: args.exercise_type,
         input_config: args.input_config,
         is_rainier: args.is_rainier,
@@ -238,7 +241,6 @@ async function processMessage(body: any, env: Env): Promise<any | null> {
         };
 
       case 'notifications/initialized':
-        // Client confirming initialization — no response needed
         return null;
 
       case 'ping':
@@ -293,11 +295,6 @@ async function processMessage(body: any, env: Env): Promise<any | null> {
   }
 }
 
-// Format a JSON-RPC response as an SSE event
-function sseEvent(data: any): string {
-  return `event: message\ndata: ${JSON.stringify(data)}\n\n`;
-}
-
 // CORS headers shared across all responses
 const CORS_HEADERS: Record<string, string> = {
   'Access-Control-Allow-Origin': '*',
@@ -305,6 +302,11 @@ const CORS_HEADERS: Record<string, string> = {
   'Access-Control-Allow-Headers': 'Content-Type, Authorization, Mcp-Session-Id, Accept',
   'Access-Control-Expose-Headers': 'Mcp-Session-Id',
 };
+
+// Generate a simple session ID
+function generateSessionId(): string {
+  return crypto.randomUUID();
+}
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
@@ -315,7 +317,7 @@ export default {
       return new Response(null, { headers: CORS_HEADERS });
     }
 
-    // Auth check (skip for OPTIONS which already returned)
+    // Auth check
     if (env.SHARED_SECRET) {
       const auth = request.headers.get('Authorization');
       if (auth !== `Bearer ${env.SHARED_SECRET}`) {
@@ -323,23 +325,33 @@ export default {
       }
     }
 
-    // GET /mcp or GET / — SSE endpoint (for clients that open a listening stream)
+    // GET — SSE endpoint or health check
     if (request.method === 'GET') {
       const accept = request.headers.get('Accept') || '';
       if (accept.includes('text/event-stream')) {
-        // Return an open SSE stream — we don't push server-initiated messages,
-        // but some clients expect to be able to open this.
-        const body = new ReadableStream({
+        // Open an SSE stream that stays alive with periodic pings.
+        // mcp-remote expects this to remain open for the session lifetime.
+        const encoder = new TextEncoder();
+        const stream = new ReadableStream({
           start(controller) {
-            controller.enqueue(new TextEncoder().encode(': ping\n\n'));
+            // Send initial comment to establish connection
+            controller.enqueue(encoder.encode(': connected\n\n'));
+          },
+          pull(controller) {
+            // Keep-alive: send a ping comment every time the stream is pulled
+            // Cloudflare Workers will keep the stream open as long as we don't close it
+          },
+          cancel() {
+            // Client disconnected
           },
         });
-        return new Response(body, {
+
+        return new Response(stream, {
           headers: {
             ...CORS_HEADERS,
             'Content-Type': 'text/event-stream',
             'Cache-Control': 'no-cache',
-            'Connection': 'keep-alive',
+            'Mcp-Session-Id': generateSessionId(),
           },
         });
       }
@@ -355,7 +367,7 @@ export default {
       });
     }
 
-    // DELETE — session cleanup (acknowledge it)
+    // DELETE — session cleanup
     if (request.method === 'DELETE') {
       return new Response(null, { status: 200, headers: CORS_HEADERS });
     }
@@ -371,11 +383,11 @@ export default {
         }), { status: 400, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } });
       }
 
-      // Check if client wants SSE response
-      const accept = request.headers.get('Accept') || '';
+      // Check what the client accepts
+      const accept = request.headers.get('Accept') || 'application/json';
       const wantsSSE = accept.includes('text/event-stream');
 
-      // Handle batch requests (array of messages)
+      // Handle batch requests
       if (Array.isArray(body)) {
         const results = await Promise.all(body.map((msg: any) => processMessage(msg, env)));
         const responses = results.filter((r: any) => r !== null);
@@ -385,12 +397,17 @@ export default {
         }
 
         if (wantsSSE) {
-          let sseBody = '';
-          for (const resp of responses) {
-            sseBody += sseEvent(resp);
-          }
-          return new Response(sseBody, {
-            headers: { ...CORS_HEADERS, 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache' },
+          const encoder = new TextEncoder();
+          const sseBody = responses
+            .map((r: any) => `event: message\ndata: ${JSON.stringify(r)}\n\n`)
+            .join('');
+          return new Response(encoder.encode(sseBody), {
+            headers: {
+              ...CORS_HEADERS,
+              'Content-Type': 'text/event-stream',
+              'Cache-Control': 'no-cache',
+              'Mcp-Session-Id': request.headers.get('Mcp-Session-Id') || generateSessionId(),
+            },
           });
         }
 
@@ -404,17 +421,37 @@ export default {
 
       // Notification — no response body
       if (result === null) {
-        return new Response(null, { status: 202, headers: CORS_HEADERS });
+        return new Response(null, {
+          status: 202,
+          headers: {
+            ...CORS_HEADERS,
+            'Mcp-Session-Id': request.headers.get('Mcp-Session-Id') || generateSessionId(),
+          },
+        });
       }
 
+      // Check if this is the initialize response — assign a session ID
+      const sessionId = request.headers.get('Mcp-Session-Id') || generateSessionId();
+
       if (wantsSSE) {
-        return new Response(sseEvent(result), {
-          headers: { ...CORS_HEADERS, 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache' },
+        // Return as SSE event
+        const sseBody = `event: message\ndata: ${JSON.stringify(result)}\n\n`;
+        return new Response(new TextEncoder().encode(sseBody), {
+          headers: {
+            ...CORS_HEADERS,
+            'Content-Type': 'text/event-stream',
+            'Cache-Control': 'no-cache',
+            'Mcp-Session-Id': sessionId,
+          },
         });
       }
 
       return new Response(JSON.stringify(result), {
-        headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+        headers: {
+          ...CORS_HEADERS,
+          'Content-Type': 'application/json',
+          'Mcp-Session-Id': sessionId,
+        },
       });
     }
 

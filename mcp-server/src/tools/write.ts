@@ -4,6 +4,7 @@ interface PlanExercise {
   name: string;
   detail?: string;
   note?: string;
+  description?: string;
   exercise_type?: string;
   input_config: any;
   is_rainier?: boolean;
@@ -102,6 +103,7 @@ export async function createWeekPlan(sb: SupabaseClient, userName: string, input
           name: exInput.name,
           detail: exInput.detail || null,
           note: exInput.note || null,
+          description: exInput.description || null,
           exercise_type: exInput.exercise_type || 'fields',
           input_config: exInput.input_config || {},
           is_rainier: exInput.is_rainier || false,
@@ -144,6 +146,7 @@ export async function addExercise(sb: SupabaseClient, sectionId: string, exercis
       name: exercise.name,
       detail: exercise.detail || null,
       note: exercise.note || null,
+      description: exercise.description || null,
       exercise_type: exercise.exercise_type || 'fields',
       input_config: exercise.input_config || {},
       is_rainier: exercise.is_rainier || false,
