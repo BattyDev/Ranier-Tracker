@@ -4,6 +4,7 @@ import { FieldGrid } from './FieldGrid.jsx';
 
 export function ExerciseCard({ exercise, logData, onLogChange, onMarkDone }) {
   const isOpen = useSignal(false);
+  const showInfo = useSignal(false);
   const config = exercise.input_config || {};
   const isCompleted = logData?.is_completed || false;
   const isWeightedSets = config.type === 'weighted_sets';
@@ -36,8 +37,18 @@ export function ExerciseCard({ exercise, logData, onLogChange, onMarkDone }) {
           {exercise.note && <div class="ex-note-text">{exercise.note}</div>}
         </div>
         {exercise.is_rainier && <span class="ex-rainier-tag">Rainier</span>}
+        {exercise.description && (
+          <button
+            class="ex-info-btn"
+            onClick={(e) => { e.stopPropagation(); showInfo.value = !showInfo.value; }}
+            title="Exercise info"
+          >ℹ</button>
+        )}
         <span class={`ex-chevron ${isOpen.value ? 'open' : ''}`}>▼</span>
       </div>
+      {showInfo.value && exercise.description && (
+        <div class="ex-description">{exercise.description}</div>
+      )}
       <div class={`ex-log ${isOpen.value ? 'open' : ''}`}>
         {isWeightedSets ? (
           <SetRows
