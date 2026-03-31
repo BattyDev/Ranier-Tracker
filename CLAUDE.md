@@ -7,7 +7,7 @@ A workout tracking app for Cody and Kylie, training for a Mt. Rainier summit in 
 - **Frontend**: Vite + Preact + Signals, deployed on Netlify
 - **Database**: Supabase (PostgreSQL) with 7 normalized tables
 - **MCP Server**: Cloudflare Worker at `https://battydev.battydev.workers.dev` — gives Claude 9 tools to read/write plans
-- **Auth**: PIN-based (no Supabase auth) — Cody: 228626, Kylie: 966337, Demo: 101010
+- **Auth**: PIN-based (no Supabase auth) — Cody: , Kylie: , Demo: 101010
 
 ## Database Schema
 - `users` — id, name, pin, display_name, avatar_emoji, goal_summary, theme, check_in_type (pain_scale|feeling)
