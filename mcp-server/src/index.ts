@@ -11,7 +11,7 @@
 
 import { getSupabase, Env } from './supabase';
 import { getUserProfile, getCurrentPlan, getExerciseLogs, getProgressSummary } from './tools/read';
-import { createWeekPlan, updateExercise, addExercise, removeExercise, updatePlanStatus } from './tools/write';
+import { createWeekPlan, updateExercise, addExercise, removeExercise, updatePlanStatus, copyWeekWithChanges } from './tools/write';
 
 const PROTOCOL_VERSION = '2025-03-26';
 
@@ -176,6 +176,65 @@ const TOOLS = [
       required: ['plan_id', 'status'],
     },
   },
+  {
+    name: 'copy_week_with_changes',
+    description: 'Copy a previous week\'s plan and apply changes — much more token-efficient than create_week_plan when most exercises stay the same. Only specify what changed (updated weights/reps, added/removed exercises). Unchanged exercises, descriptions, and input_configs are copied automatically.',
+    inputSchema: {
+      type: 'object' as const,
+      properties: {
+        user_name: { type: 'string', description: 'User name: "cody" or "kylie"' },
+        source_week: { type: 'number', description: 'Week number to copy from' },
+        target_week: { type: 'number', description: 'Week number to create' },
+        target_label: { type: 'string', description: 'e.g. "Week 3"' },
+        target_subtitle: { type: 'string', description: 'e.g. "Apr 7–13"' },
+        day_changes: {
+          type: 'array',
+          description: 'Optional: changes to day-level fields (title, duration, day_type)',
+          items: {
+            type: 'object',
+            properties: {
+              day: { type: 'string', description: 'Day label to match, e.g. "Monday"' },
+              update: { type: 'object', description: 'Fields to update: title, duration, day_type, is_rest_day, rest_message, rest_icon' },
+            },
+            required: ['day', 'update'],
+          },
+        },
+        exercise_changes: {
+          type: 'array',
+          description: 'List of exercise-level changes. Each entry targets a specific day + exercise.',
+          items: {
+            type: 'object',
+            properties: {
+              day: { type: 'string', description: 'Day label, e.g. "Monday"' },
+              exercise: { type: 'string', description: 'Exercise name to match (for update/remove). Case-insensitive.' },
+              section: { type: 'string', description: 'Section label (required for add operations), e.g. "Main work"' },
+              update: {
+                type: 'object',
+                description: 'Fields to update: name, detail, note, description, exercise_type, input_config, is_rainier',
+              },
+              add: {
+                type: 'object',
+                description: 'New exercise to add to the section. Requires name and input_config.',
+                properties: {
+                  name: { type: 'string' },
+                  detail: { type: 'string' },
+                  note: { type: 'string' },
+                  description: { type: 'string' },
+                  exercise_type: { type: 'string' },
+                  input_config: { type: 'object' },
+                  is_rainier: { type: 'boolean' },
+                },
+                required: ['name', 'input_config'],
+              },
+              remove: { type: 'boolean', description: 'If true, remove the matched exercise' },
+            },
+            required: ['day'],
+          },
+        },
+      },
+      required: ['user_name', 'source_week', 'target_week', 'target_label'],
+    },
+  },
 ];
 
 // Execute a tool call
@@ -214,6 +273,15 @@ async function executeTool(env: Env, toolName: string, args: any): Promise<any> 
       return await removeExercise(sb, args.exercise_id);
     case 'update_plan_status':
       return await updatePlanStatus(sb, args.plan_id, args.status);
+    case 'copy_week_with_changes':
+      return await copyWeekWithChanges(sb, args.user_name, {
+        source_week: args.source_week,
+        target_week: args.target_week,
+        target_label: args.target_label,
+        target_subtitle: args.target_subtitle,
+        exercise_changes: args.exercise_changes,
+        day_changes: args.day_changes,
+      });
     default:
       throw new Error(`Unknown tool: ${toolName}`);
   }
